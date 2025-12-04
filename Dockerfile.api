@@ -1,0 +1,18 @@
+FROM golang:1.25-alpine
+
+WORKDIR /app
+
+# Install air for hot reload
+RUN go install github.com/air-verse/air@latest
+
+# Copy go.mod and go.sum from the api folder
+COPY api/go.mod api/go.sum ./
+RUN go mod download
+
+# Copy all Go source files from api folder
+COPY api/ ./
+
+EXPOSE 8080
+
+CMD ["air"]
+

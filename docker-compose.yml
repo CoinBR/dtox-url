@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - ./volumes/db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${API_DATABASE_URL}
+      PORT: ${API_PORT}
+    ports:
+      - "${API_PORT}:${API_PORT}"
+    depends_on:
+      db:
+        condition: service_healthy
+    # No volumes = code baked into image, no hot reload
+
+  ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    env_file:
+      - .env
+    environment:
+      ANGULAR_API_BASE_URL: ${ANGULAR_API_BASE_URL}
+    ports:
+      - "${UI_PORT}:4200"
+    depends_on:
+      - api
+    # No volumes = code baked into image, no hot reload
+
